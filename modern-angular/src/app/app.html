@@ -1,22 +1,21 @@
 <app-header></app-header>
 
 <task-panel
-  [tasks]="tasks"
-  [filteredTasks]="filteredTasks"
-  [newTaskTitle]="newTaskTitle"
-  (newTaskTitleChange)="newTaskTitle = $event"
-  [newTaskPriority]="newTaskPriority"
-  (newTaskPriorityChange)="newTaskPriority = $event"
-  [filterState]="filterState"
-  (filterStateChange)="filterState = $event"
-  [searchText]="searchText"
-  (searchTextChange)="searchText = $event"
-  [openCount]="openCount"
-  [doneCount]="doneCount"
+  [tasks]="tasks()"
+  [filteredTasks]="filteredTasks()"
+  [newTaskTitle]="newTaskTitle()"
+  (newTaskTitleChange)="newTaskTitle.set($event)"
+  [newTaskPriority]="newTaskPriority()"
+  (newTaskPriorityChange)="newTaskPriority.set($event)"
+  [filterState]="filterState()"
+  (filterStateChange)="filterState.set($event)"
+  [searchText]="searchText()"
+  (searchTextChange)="searchText.set($event)"
+  [openCount]="openCount()"
+  [doneCount]="doneCount()"
   (add)="addTask()"
   (remove)="removeTask($event)"
-  (toggleDone)="toggleDone()"
-  (applyFilter)="applyFilter()">
+  (toggleDone)="toggleDone()">
 </task-panel>
 
-<users-panel [users]="users" (load)="loadUsers()"></users-panel>
+<users-panel [users]="users()" (load)="loadUsers()"></users-panel>

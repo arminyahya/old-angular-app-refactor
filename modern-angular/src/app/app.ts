@@ -1,4 +1,4 @@
-import { Component, ViewEncapsulation } from '@angular/core';
+import { Component, ViewEncapsulation, computed, signal } from '@angular/core';
 
 import { AppHeaderComponent } from './components/app-header/app-header.component';
 import { TaskPanelComponent } from './components/task-panel/task-panel.component';
@@ -16,80 +16,73 @@ import { UserService } from './services/user.service';
   encapsulation: ViewEncapsulation.None
 })
 export class App {
-  tasks: Task[] = [];
-  filteredTasks: Task[] = [];
-  users: User[] = [];
+  tasks = signal<Task[]>([]);
+  users = signal<User[]>([]);
 
-  newTaskTitle = '';
-  newTaskPriority = 'medium';
-  filterState = 'all';
-  searchText = '';
+  newTaskTitle = signal('');
+  newTaskPriority = signal('medium');
+  filterState = signal('all');
+  searchText = signal('');
 
-  openCount = 0;
-  doneCount = 0;
+  readonly filteredTasks = computed(() => {
+    const state = this.filterState();
+    const search = (this.searchText() || '').toLowerCase();
 
-  constructor(
-    private readonly taskService: TaskService,
-    private readonly userService: UserService
-  ) {
-    this.tasks = this.taskService.getAll();
-    this.normalizePriorities(this.tasks);
-    this.ensureTaskIds(this.tasks);
-    this.applyFilter();
-  }
-
-  addTask(): void {
-    if (!this.newTaskTitle) {
-      return;
-    }
-
-    this.tasks = this.taskService.add({
-      id: this.nextTaskId(this.tasks),
-      title: this.newTaskTitle,
-      done: false,
-      priority: this.newTaskPriority
-    });
-
-    this.newTaskTitle = '';
-    this.newTaskPriority = 'medium';
-    this.normalizePriorities(this.tasks);
-    this.applyFilter();
-    this.persist();
-  }
-
-  removeTask(task: Task): void {
-    this.tasks = this.taskService.remove(task);
-    this.applyFilter();
-    this.persist();
-  }
-
-  applyFilter(): void {
-    const state = this.filterState;
-    const search = (this.searchText || '').toLowerCase();
-
-    this.filteredTasks = this.tasks.filter((task) => {
+    return this.tasks().filter((task) => {
       const matchesState =
         state === 'all' || (state === 'open' && !task.done) || (state === 'done' && task.done);
       const matchesSearch = !search || task.title.toLowerCase().includes(search);
       return matchesState && matchesSearch;
     });
+  });
 
-    this.updateCounts();
+  readonly openCount = computed(() => this.tasks().filter((task) => !task.done).length);
+  readonly doneCount = computed(() => this.tasks().filter((task) => task.done).length);
+
+  constructor(
+    private readonly taskService: TaskService,
+    private readonly userService: UserService
+  ) {
+    this.tasks.set(this.taskService.getAll());
+    this.normalizePriorities(this.tasks());
+    this.ensureTaskIds(this.tasks());
+  }
+
+  addTask(): void {
+    if (!this.newTaskTitle()) {
+      return;
+    }
+
+    this.tasks.set(this.taskService.add({
+      id: this.nextTaskId(this.tasks()),
+      title: this.newTaskTitle(),
+      done: false,
+      priority: this.newTaskPriority()
+    }));
+
+    this.newTaskTitle.set('');
+    this.newTaskPriority.set('medium');
+    this.normalizePriorities(this.tasks());
+    this.persist();
+  }
+
+  removeTask(task: Task): void {
+    this.tasks.set(this.taskService.remove(task));
+    this.persist();
   }
 
   toggleDone(): void {
-    this.applyFilter();
     this.persist();
   }
 
   loadUsers(): void {
-    this.users = [];
+    this.users.set([]);
     this.userService.fetchUsers().subscribe({
       next: (users) => {
-        this.users = users;
+        this.users.set(users);
       },
       error: () => {
-        this.users = [{ name: 'Error loading users', role: 'n/a' }];
+        this.users.set([{ name: 'Error loading users', role: 'n/a' }]);
       }
     });
   }
@@ -124,21 +117,7 @@ export class App {
     return maxId + 1;
   }
 
-  private updateCounts(): void {
-    let open = 0;
-    let done = 0;
-    this.tasks.forEach((task) => {
-      if (task.done) {
-        done += 1;
-      } else {
-        open += 1;
-      }
-    });
-    this.openCount = open;
-    this.doneCount = done;
-  }
-
   private persist(): void {
-    this.taskService.save(this.tasks);
+    this.taskService.save(this.tasks());
   }
 }
