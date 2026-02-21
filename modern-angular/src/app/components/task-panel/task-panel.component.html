@@ -3,13 +3,11 @@
   <form (ngSubmit)="add.emit()">
     <input
       type="text"
-      [ngModel]="newTaskTitle"
-      (ngModelChange)="newTaskTitleChange.emit($event)"
+      [(ngModel)]="newTaskTitle"
       name="newTaskTitle"
       placeholder="New task" />
     <select
-      [ngModel]="newTaskPriority"
-      (ngModelChange)="newTaskPriorityChange.emit($event)"
+      [(ngModel)]="newTaskPriority"
       name="newTaskPriority">
       <option value="low">Low</option>
       <option value="medium">Medium</option>
@@ -22,8 +20,7 @@
     <label>
       Show:
       <select
-        [ngModel]="filterState"
-        (ngModelChange)="filterStateChange.emit($event); applyFilter.emit()"
+        [(ngModel)]="filterState"
         name="filterState">
         <option value="all">All</option>
         <option value="open">Open</option>
@@ -34,8 +31,7 @@
       Search:
       <input
         type="text"
-        [ngModel]="searchText"
-        (ngModelChange)="onSearchTextChanged($event)"
+        [(ngModel)]="searchText"
         name="searchText" />
     </label>
   </div>
