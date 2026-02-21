@@ -9,9 +9,9 @@
     ])
     .controller('MainCtrl', MainCtrl);
 
-  MainCtrl.$inject = ['$scope', 'taskService', 'userService'];
+  MainCtrl.$inject = ['taskService', 'userService'];
 
-  function MainCtrl($scope, taskService, userService) {
+  function MainCtrl(taskService, userService) {
     var vm = this;
 
     vm.tasks = taskService.getAll();
@@ -30,27 +30,15 @@
     vm.removeTask = removeTask;
     vm.applyFilter = applyFilter;
     vm.persist = persist;
+    vm.toggleDone = toggleDone;
     vm.loadUsers = loadUsers;
 
     init();
 
     function init() {
       normalizePriorities(vm.tasks);
+      ensureTaskIds(vm.tasks);
       applyFilter();
-
-      $scope.$watchGroup([
-        function () { return vm.filterState; },
-        function () { return vm.searchText; }
-      ], function () {
-        applyFilter();
-      });
-
-      // Keep counts/filter aligned when "done" changes via checkbox.
-      $scope.$watch(taskDoneSignature, function (next, prev) {
-        if (next !== prev) {
-          applyFilter();
-        }
-      });
     }
 
     function addTask() {
@@ -59,6 +47,7 @@
       }
 
       vm.tasks = taskService.add({
+        id: nextTaskId(vm.tasks),
         title: vm.newTaskTitle,
         done: false,
         priority: vm.newTaskPriority
@@ -94,16 +83,39 @@
       updateCounts();
     }
 
+    function toggleDone() {
+      applyFilter();
+      persist();
+    }
+
     function normalizePriorities(tasks) {
       tasks.forEach(function (task) {
         task.priority = (task.priority || 'medium').toLowerCase();
       });
     }
 
-    function taskDoneSignature() {
-      return vm.tasks.map(function (task) {
-        return task.done ? '1' : '0';
-      }).join('|');
+    function ensureTaskIds(tasks) {
+      var changed = false;
+      tasks.forEach(function (task) {
+        if (typeof task.id !== 'number') {
+          task.id = nextTaskId(tasks);
+          changed = true;
+        }
+      });
+
+      if (changed) {
+        persist();
+      }
+    }
+
+    function nextTaskId(tasks) {
+      var maxId = 0;
+      tasks.forEach(function (task) {
+        if (typeof task.id === 'number' && task.id > maxId) {
+          maxId = task.id;
+        }
+      });
+      return maxId + 1;
     }
 
     function updateCounts() {
