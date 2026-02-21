@@ -1,0 +1,44 @@
+<section class="panel">
+  <h2>Tasks</h2>
+  <form ng-submit="$ctrl.onAdd()">
+    <input type="text" ng-model="$ctrl.newTaskTitle" placeholder="New task" />
+    <select ng-model="$ctrl.newTaskPriority">
+      <option value="low">Low</option>
+      <option value="medium">Medium</option>
+      <option value="high">High</option>
+    </select>
+    <button type="submit">Add</button>
+  </form>
+
+  <div class="filters">
+    <label>
+      Show:
+      <select ng-model="$ctrl.filterState" ng-change="$ctrl.onApplyFilter()">
+        <option value="all">All</option>
+        <option value="open">Open</option>
+        <option value="done">Done</option>
+      </select>
+    </label>
+    <label>
+      Search:
+      <input type="text" ng-model="$ctrl.searchText" ng-change="$ctrl.onApplyFilter()" />
+    </label>
+  </div>
+
+  <ul class="task-list">
+    <li ng-repeat="task in $ctrl.filteredTasks">
+      <label>
+        <input type="checkbox" ng-model="task.done" ng-change="$ctrl.onPersist()" />
+        <span ng-class="{done: task.done}">{{task.title}}</span>
+      </label>
+      <span class="priority" ng-class="task.priority">{{task.priority}}</span>
+      <button class="link" ng-click="$ctrl.onRemove({ task: task })">Remove</button>
+    </li>
+  </ul>
+
+  <task-stats
+    open="$ctrl.openCount"
+    done="$ctrl.doneCount"
+    total="$ctrl.tasks.length">
+  </task-stats>
+</section>
