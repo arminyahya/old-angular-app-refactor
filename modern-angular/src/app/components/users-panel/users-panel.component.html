@@ -1,0 +1,12 @@
+<section class="panel">
+  <h2>Users (legacy async)</h2>
+  <button type="button" (click)="load.emit()">Load Users</button>
+  <ul class="user-list">
+    @for (user of users; track user.name) {
+      <li>
+        <span>{{ user.name }}</span>
+        <small>{{ user.role }}</small>
+      </li>
+    }
+  </ul>
+</section>
