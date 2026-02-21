@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="en" ng-app="legacyApp">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Legacy AngularJS App</title>
+    <link rel="stylesheet" href="assets/styles.css" />
+  </head>
+  <body ng-controller="MainCtrl as vm">
+    <header class="app-header">
+      <h1>Legacy AngularJS App</h1>
+      <p>Practice refactor: controllers, $scope, watchers, services, and templates.</p>
+    </header>
+
+    <section class="panel">
+      <h2>Tasks</h2>
+      <form ng-submit="vm.addTask()">
+        <input type="text" ng-model="vm.newTaskTitle" placeholder="New task" />
+        <select ng-model="vm.newTaskPriority">
+          <option value="low">Low</option>
+          <option value="medium">Medium</option>
+          <option value="high">High</option>
+        </select>
+        <button type="submit">Add</button>
+      </form>
+
+      <div class="filters">
+        <label>
+          Show:
+          <select ng-model="vm.filterState" ng-change="vm.applyFilter()">
+            <option value="all">All</option>
+            <option value="open">Open</option>
+            <option value="done">Done</option>
+          </select>
+        </label>
+        <label>
+          Search:
+          <input type="text" ng-model="vm.searchText" ng-change="vm.applyFilter()" />
+        </label>
+      </div>
+
+      <ul class="task-list">
+        <li ng-repeat="task in vm.filteredTasks">
+          <label>
+            <input type="checkbox" ng-model="task.done" ng-change="vm.persist()" />
+            <span ng-class="{done: task.done}">{{task.title}}</span>
+          </label>
+          <span class="priority" ng-class="task.priority">{{task.priority}}</span>
+          <button class="link" ng-click="vm.removeTask(task)">Remove</button>
+        </li>
+      </ul>
+
+      <p class="stats">
+        <strong>{{vm.openCount}}</strong> open
+        | <strong>{{vm.doneCount}}</strong> done
+        | <strong>{{vm.tasks.length}}</strong> total
+      </p>
+    </section>
+
+    <section class="panel">
+      <h2>Users (legacy async)</h2>
+      <button ng-click="vm.loadUsers()">Load Users</button>
+      <ul class="user-list">
+        <li ng-repeat="user in vm.users">
+          <span>{{user.name}}</span>
+          <small>{{user.role}}</small>
+        </li>
+      </ul>
+    </section>
+
+    <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.7.9/angular.min.js"></script>
+    <script src="modules/core.module.js"></script>
+    <script src="modules/tasks/tasks.module.js"></script>
+    <script src="modules/users/users.module.js"></script>
+    <script src="app.js"></script>
+    <script src="services/taskService.js"></script>
+    <script src="services/userService.js"></script>
+    <script src="components/taskStats.js"></script>
+  </body>
+</html>
