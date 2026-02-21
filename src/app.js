@@ -35,24 +35,22 @@
     init();
 
     function init() {
+      normalizePriorities(vm.tasks);
       applyFilter();
 
-      // Legacy style watcher that updates counts.
-      $scope.$watch(function () {
-        return vm.tasks;
-      }, function () {
-        updateCounts();
-      }, true);
+      $scope.$watchGroup([
+        function () { return vm.filterState; },
+        function () { return vm.searchText; }
+      ], function () {
+        applyFilter();
+      });
 
-      // Another deep watcher that mutates in-place (immutability issue).
-      $scope.$watch(function () {
-        return vm.filteredTasks;
-      }, function () {
-        // Normalize priorities in-place to illustrate mutation patterns.
-        vm.filteredTasks.forEach(function (task) {
-          task.priority = (task.priority || 'medium').toLowerCase();
-        });
-      }, true);
+      // Keep counts/filter aligned when "done" changes via checkbox.
+      $scope.$watch(taskDoneSignature, function (next, prev) {
+        if (next !== prev) {
+          applyFilter();
+        }
+      });
     }
 
     function addTask() {
@@ -60,7 +58,7 @@
         return;
       }
 
-      taskService.add({
+      vm.tasks = taskService.add({
         title: vm.newTaskTitle,
         done: false,
         priority: vm.newTaskPriority
@@ -68,12 +66,13 @@
 
       vm.newTaskTitle = '';
       vm.newTaskPriority = 'medium';
+      normalizePriorities(vm.tasks);
       applyFilter();
       persist();
     }
 
     function removeTask(task) {
-      taskService.remove(task);
+      vm.tasks = taskService.remove(task);
       applyFilter();
       persist();
     }
@@ -93,6 +92,18 @@
       });
 
       updateCounts();
+    }
+
+    function normalizePriorities(tasks) {
+      tasks.forEach(function (task) {
+        task.priority = (task.priority || 'medium').toLowerCase();
+      });
+    }
+
+    function taskDoneSignature() {
+      return vm.tasks.map(function (task) {
+        return task.done ? '1' : '0';
+      }).join('|');
     }
 
     function updateCounts() {
