@@ -1,4 +1,14 @@
-import { ChangeDetectionStrategy, Component, ViewEncapsulation, computed, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  DestroyRef,
+  ViewEncapsulation,
+  computed,
+  inject,
+  signal
+} from '@angular/core';
+import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
+import { catchError, distinctUntilChanged, map, of, startWith, switchMap } from 'rxjs';
 
 import { AppHeaderComponent } from './components/app-header/app-header.component';
 import { TaskPanelComponent } from './components/task-panel/task-panel.component';
@@ -17,6 +27,8 @@ import { UserService } from './services/user.service';
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class App {
+  private readonly destroyRef = inject(DestroyRef);
+
   tasks = signal<Task[]>([]);
   users = signal<User[]>([]);
 
@@ -44,9 +56,16 @@ export class App {
     private readonly taskService: TaskService,
     private readonly userService: UserService
   ) {
-    const normalizedTasks = this.normalizePriorities(this.taskService.getAll());
-    const tasksWithIds = this.ensureTaskIds(normalizedTasks);
-    this.tasks.set(tasksWithIds);
+    toObservable(this.searchText)
+      .pipe(
+        startWith(this.searchText()),
+        distinctUntilChanged(),
+        switchMap((searchText) => this.taskService.fetchAll(searchText)),
+        map((tasks) => this.ensureTaskIds(this.normalizePriorities(tasks))),
+        catchError(() => of([{ id: 1, title: 'Error loading tasks', done: false, priority: 'high' }])),
+        takeUntilDestroyed(this.destroyRef)
+      )
+      .subscribe((tasks) => this.tasks.set(tasks));
   }
 
   addTask(): void {
@@ -66,19 +85,16 @@ export class App {
 
     this.newTaskTitle.set('');
     this.newTaskPriority.set('medium');
-    this.persist();
   }
 
   removeTask(task: Task): void {
     this.tasks.update((tasks) => tasks.filter((currentTask) => currentTask.id !== task.id));
-    this.persist();
   }
 
   toggleDone(task: Task): void {
     this.tasks.update((tasks) =>
       tasks.map((currentTask) => (currentTask.id === task.id ? task : currentTask))
     );
-    this.persist();
   }
 
   loadUsers(): void {
@@ -101,22 +117,16 @@ export class App {
   }
 
   private ensureTaskIds(tasks: Task[]): Task[] {
-    let changed = false;
     let nextId = this.nextTaskId(tasks);
     const normalizedTasks = tasks.map((task) => {
       if (typeof task.id === 'number') {
         return task;
       }
 
-      changed = true;
       const taskWithId = { ...task, id: nextId };
       nextId += 1;
       return taskWithId;
     });
-
-    if (changed) {
-      this.taskService.save(normalizedTasks);
-    }
 
     return normalizedTasks;
   }
@@ -129,9 +139,5 @@ export class App {
       }
     });
     return maxId + 1;
-  }
-
-  private persist(): void {
-    this.taskService.save(this.tasks());
   }
 }

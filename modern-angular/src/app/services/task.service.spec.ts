@@ -1,51 +1,59 @@
 import { TestBed } from '@angular/core/testing';
+import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting, HttpTestingController } from '@angular/common/http/testing';
 
+import { Task } from '../models/task.model';
 import { TaskService } from './task.service';
 
 describe('TaskService', () => {
   let service: TaskService;
+  let httpController: HttpTestingController;
 
   beforeEach(() => {
-    TestBed.configureTestingModule({});
+    TestBed.configureTestingModule({
+      providers: [provideHttpClient(), provideHttpClientTesting()]
+    });
     service = TestBed.inject(TaskService);
-    localStorage.removeItem('legacy_tasks');
+    httpController = TestBed.inject(HttpTestingController);
   });
 
-  it('returns default tasks when storage is empty', () => {
-    const tasks = service.getAll();
-
-    expect(tasks.length).toBe(3);
-    expect(tasks[0].title).toBe('Review legacy controller');
+  afterEach(() => {
+    httpController.verify();
   });
 
-  it('returns empty list when stored JSON is invalid', () => {
-    localStorage.setItem('legacy_tasks', 'not-json');
+  it('fetches tasks from the api endpoint', () => {
+    const response = [
+      { id: 1, title: 'Review legacy controller', done: false, priority: 'high' },
+      { id: 2, title: 'Replace $scope watchers', done: false, priority: 'medium' }
+    ];
 
-    expect(service.getAll()).toEqual([]);
-  });
-
-  it('adds and persists a task', () => {
-    const tasks = service.add({
-      id: 1,
-      title: 'Test task',
-      done: false,
-      priority: 'medium'
+    let tasks: Task[] | undefined;
+    service.fetchAll().subscribe((value) => {
+      tasks = value;
     });
 
-    expect(tasks.some((task) => task.title === 'Test task')).toBe(true);
-    expect(JSON.parse(localStorage.getItem('legacy_tasks') ?? '[]').length).toBe(tasks.length);
+    const req = httpController.expectOne('/api/tasks.json');
+    expect(req.request.method).toBe('GET');
+    req.flush(response);
+
+    expect(tasks).toEqual(response);
   });
 
-  it('does not remove when reference is from a different getAll call', () => {
-    service.save([
-      { id: 1, title: 'A', done: false, priority: 'high' },
-      { id: 2, title: 'B', done: false, priority: 'low' }
-    ]);
+  it('passes through http errors', () => {
+    let status = 0;
+    let sawNext = false;
+    service.fetchAll().subscribe({
+      next: () => {
+        sawNext = true;
+      },
+      error: (err) => {
+        status = err.status;
+      }
+    });
 
-    const externalRef = service.getAll()[0];
-    const updated = service.remove(externalRef);
-
-    // Legacy behavior: remove compares by reference against a fresh getAll() result.
-    expect(updated.length).toBe(2);
+    const req = httpController.expectOne('/api/tasks.json');
+    req.flush('failed', { status: 500, statusText: 'Server Error' });
+    expect(sawNext).toBe(false);
+    expect(status).toBe(500);
   });
 });
