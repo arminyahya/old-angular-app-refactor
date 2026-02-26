@@ -34,7 +34,17 @@
         [(ngModel)]="searchText"
         name="searchText" />
     </label>
+    <button
+      type="button"
+      [disabled]="autoPrioritizing || !tasks.length"
+      (click)="autoPrioritize.emit()">
+      {{ autoPrioritizing ? 'Auto-prioritizing...' : 'Auto-prioritize all' }}
+    </button>
   </div>
+
+  @if (autoPriorityStatus) {
+    <p class="status-text">{{ autoPriorityStatus }}</p>
+  }
 
   <ul class="task-list">
     @for (task of filteredTasks; track task.id ?? task.title) {

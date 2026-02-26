@@ -1,6 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting, HttpTestingController } from '@angular/common/http/testing';
+import { firstValueFrom } from 'rxjs';
 
 import { Task } from '../models/task.model';
 import { TaskService } from './task.service';
@@ -55,5 +56,29 @@ describe('TaskService', () => {
     req.flush('failed', { status: 500, statusText: 'Server Error' });
     expect(sawNext).toBe(false);
     expect(status).toBe(500);
+  });
+
+  it('suggests high priority for urgent open tasks', async () => {
+    const task: Task = { title: 'Fix urgent production bug', done: false, priority: 'medium' };
+
+    const suggested = await firstValueFrom(service.suggestPriority(task));
+
+    expect(suggested).toBe('high');
+  });
+
+  it('suggests low priority for completed tasks', async () => {
+    const task: Task = { title: 'Any title', done: true, priority: 'high' };
+
+    const suggested = await firstValueFrom(service.suggestPriority(task));
+
+    expect(suggested).toBe('low');
+  });
+
+  it('suggests medium priority for neutral open tasks', async () => {
+    const task: Task = { title: 'Prepare sprint notes', done: false, priority: 'low' };
+
+    const suggested = await firstValueFrom(service.suggestPriority(task));
+
+    expect(suggested).toBe('medium');
   });
 });

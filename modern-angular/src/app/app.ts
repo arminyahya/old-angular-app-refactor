@@ -8,7 +8,18 @@ import {
   signal
 } from '@angular/core';
 import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
-import { catchError, distinctUntilChanged, map, of, startWith, switchMap } from 'rxjs';
+import {
+  catchError,
+  distinctUntilChanged,
+  finalize,
+  from,
+  map,
+  mergeMap,
+  of,
+  startWith,
+  switchMap,
+  tap
+} from 'rxjs';
 
 import { AppHeaderComponent } from './components/app-header/app-header.component';
 import { TaskPanelComponent } from './components/task-panel/task-panel.component';
@@ -36,6 +47,8 @@ export class App {
   newTaskPriority = signal('medium');
   filterState = signal('all');
   searchText = signal('');
+  autoPriorityStatus = signal('');
+  isAutoPrioritizing = signal(false);
 
   readonly filteredTasks = computed(() => {
     const state = this.filterState();
@@ -129,6 +142,54 @@ export class App {
     });
 
     return normalizedTasks;
+  }
+
+  autoPrioritizeTasks(): void {
+    const tasksSnapshot = this.tasks();
+    if (!tasksSnapshot.length || this.isAutoPrioritizing()) {
+      return;
+    }
+
+    let completed = 0;
+    this.isAutoPrioritizing.set(true);
+    this.autoPriorityStatus.set(`Updating priorities 0/${tasksSnapshot.length}...`);
+
+    from(tasksSnapshot.map((task, index) => ({ task, index })))
+      .pipe(
+        mergeMap(
+          ({ task, index }) =>
+            this.taskService.suggestPriority(task).pipe(
+              map((priority) => ({
+                priority,
+                taskId: task.id,
+                index
+              }))
+            ),
+          3
+        ),
+        tap(({ priority, taskId, index }) => {
+          this.tasks.update((tasks) =>
+            tasks.map((task, currentIndex) => {
+              if (typeof taskId === 'number' && task.id === taskId) {
+                return { ...task, priority };
+              }
+              if (typeof taskId !== 'number' && currentIndex === index) {
+                return { ...task, priority };
+              }
+              return task;
+            })
+          );
+
+          completed += 1;
+          this.autoPriorityStatus.set(`Updating priorities ${completed}/${tasksSnapshot.length}...`);
+        }),
+        finalize(() => {
+          this.autoPriorityStatus.set(`Done. Updated ${completed} task priorities.`);
+          this.isAutoPrioritizing.set(false);
+        }),
+        takeUntilDestroyed(this.destroyRef)
+      )
+      .subscribe();
   }
 
   private nextTaskId(tasks: Task[]): number {

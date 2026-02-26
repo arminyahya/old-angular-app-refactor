@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
-import { Observable, map } from 'rxjs';
+import { Observable, map, timer } from 'rxjs';
 
 import { Task } from '../models/task.model';
 
@@ -22,5 +22,27 @@ export class TaskService {
         search ? tasks.filter((task) => task.title.toLowerCase().includes(search)) : tasks
       )
     );
+  }
+
+  suggestPriority(task: Task): Observable<string> {
+    const simulatedLatencyMs = 250 + Math.floor(Math.random() * 700);
+    return timer(simulatedLatencyMs).pipe(map(() => this.computeSuggestedPriority(task)));
+  }
+
+  private computeSuggestedPriority(task: Task): string {
+    if (task.done) {
+      return 'low';
+    }
+
+    const title = task.title.toLowerCase();
+    if (title.includes('urgent') || title.includes('blocker') || title.includes('fix')) {
+      return 'high';
+    }
+
+    if (title.includes('docs') || title.includes('chore') || title.includes('cleanup')) {
+      return 'low';
+    }
+
+    return 'medium';
   }
 }

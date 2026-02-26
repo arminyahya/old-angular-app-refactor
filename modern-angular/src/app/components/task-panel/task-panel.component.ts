@@ -22,8 +22,11 @@ export class TaskPanelComponent {
   searchText = model('');
   @Input() openCount = 0;
   @Input() doneCount = 0;
+  @Input() autoPrioritizing = false;
+  @Input() autoPriorityStatus = '';
 
   @Output() add = new EventEmitter<void>();
+  @Output() autoPrioritize = new EventEmitter<void>();
   @Output() remove = new EventEmitter<Task>();
   @Output() toggleDone = new EventEmitter<Task>();
 }
