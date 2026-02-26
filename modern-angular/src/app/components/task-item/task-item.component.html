@@ -1,9 +1,8 @@
 <label>
   <input
     type="checkbox"
-    [ngModel]="task().done"
-    (ngModelChange)="onDoneChange($event)"
-    [name]="'done-' + (task().id ?? task().title)" />
+    [checked]="task().done"
+    (change)="onDoneChange($any($event.target).checked)" />
   <span [class.done]="task().done">{{ task().title }}</span>
 </label>
 <span class="priority" [class]="('priority ' + task().priority)">{{ task().priority }}</span>

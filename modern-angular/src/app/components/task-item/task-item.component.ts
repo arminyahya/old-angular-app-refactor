@@ -1,12 +1,10 @@
 import { ChangeDetectionStrategy, Component, EventEmitter, Output, input } from '@angular/core';
-import { FormsModule } from '@angular/forms';
 
 import { Task } from '../../models/task.model';
 
 @Component({
   selector: 'li[task-item]',
   standalone: true,
-  imports: [FormsModule],
   templateUrl: './task-item.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush
 })
