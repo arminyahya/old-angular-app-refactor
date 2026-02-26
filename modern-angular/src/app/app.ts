@@ -1,4 +1,4 @@
-import { Component, ViewEncapsulation, computed, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, ViewEncapsulation, computed, signal } from '@angular/core';
 
 import { AppHeaderComponent } from './components/app-header/app-header.component';
 import { TaskPanelComponent } from './components/task-panel/task-panel.component';
@@ -13,7 +13,8 @@ import { UserService } from './services/user.service';
   imports: [AppHeaderComponent, TaskPanelComponent, UsersPanelComponent],
   templateUrl: './app.html',
   styleUrl: './app.css',
-  encapsulation: ViewEncapsulation.None
+  encapsulation: ViewEncapsulation.None,
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class App {
   tasks = signal<Task[]>([]);
@@ -43,9 +44,9 @@ export class App {
     private readonly taskService: TaskService,
     private readonly userService: UserService
   ) {
-    this.tasks.set(this.taskService.getAll());
-    this.normalizePriorities(this.tasks());
-    this.ensureTaskIds(this.tasks());
+    const normalizedTasks = this.normalizePriorities(this.taskService.getAll());
+    const tasksWithIds = this.ensureTaskIds(normalizedTasks);
+    this.tasks.set(tasksWithIds);
   }
 
   addTask(): void {
@@ -53,25 +54,30 @@ export class App {
       return;
     }
 
-    this.tasks.set(this.taskService.add({
-      id: this.nextTaskId(this.tasks()),
-      title: this.newTaskTitle(),
-      done: false,
-      priority: this.newTaskPriority()
-    }));
+    this.tasks.update((tasks) => [
+      ...tasks,
+      {
+        id: this.nextTaskId(tasks),
+        title: this.newTaskTitle(),
+        done: false,
+        priority: (this.newTaskPriority() || 'medium').toLowerCase()
+      }
+    ]);
 
     this.newTaskTitle.set('');
     this.newTaskPriority.set('medium');
-    this.normalizePriorities(this.tasks());
     this.persist();
   }
 
   removeTask(task: Task): void {
-    this.tasks.set(this.taskService.remove(task));
+    this.tasks.update((tasks) => tasks.filter((currentTask) => currentTask.id !== task.id));
     this.persist();
   }
 
-  toggleDone(): void {
+  toggleDone(task: Task): void {
+    this.tasks.update((tasks) =>
+      tasks.map((currentTask) => (currentTask.id === task.id ? task : currentTask))
+    );
     this.persist();
   }
 
@@ -87,24 +93,32 @@ export class App {
     });
   }
 
-  private normalizePriorities(tasks: Task[]): void {
-    tasks.forEach((task) => {
-      task.priority = (task.priority || 'medium').toLowerCase();
-    });
+  private normalizePriorities(tasks: Task[]): Task[] {
+    return tasks.map((task) => ({
+      ...task,
+      priority: (task.priority || 'medium').toLowerCase()
+    }));
   }
 
-  private ensureTaskIds(tasks: Task[]): void {
+  private ensureTaskIds(tasks: Task[]): Task[] {
     let changed = false;
-    tasks.forEach((task) => {
-      if (typeof task.id !== 'number') {
-        task.id = this.nextTaskId(tasks);
-        changed = true;
+    let nextId = this.nextTaskId(tasks);
+    const normalizedTasks = tasks.map((task) => {
+      if (typeof task.id === 'number') {
+        return task;
       }
+
+      changed = true;
+      const taskWithId = { ...task, id: nextId };
+      nextId += 1;
+      return taskWithId;
     });
 
     if (changed) {
-      this.persist();
+      this.taskService.save(normalizedTasks);
     }
+
+    return normalizedTasks;
   }
 
   private nextTaskId(tasks: Task[]): number {

@@ -11,7 +11,7 @@
   [doneCount]="doneCount()"
   (add)="addTask()"
   (remove)="removeTask($event)"
-  (toggleDone)="toggleDone()">
+  (toggleDone)="toggleDone($event)">
 </task-panel>
 
 <users-panel [users]="users()" (load)="loadUsers()"></users-panel>

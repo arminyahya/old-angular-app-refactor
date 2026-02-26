@@ -38,17 +38,11 @@
 
   <ul class="task-list">
     @for (task of filteredTasks; track task.id ?? task.title) {
-      <li>
-        <label>
-          <input
-            type="checkbox"
-            [ngModel]="task.done"
-            (ngModelChange)="task.done = $event; toggleDone.emit(task)"
-            [name]="'done-' + (task.id ?? task.title)" />
-          <span [class.done]="task.done">{{ task.title }}</span>
-        </label>
-        <span class="priority" [class]="('priority ' + task.priority)">{{ task.priority }}</span>
-        <button class="link" type="button" (click)="remove.emit(task)">Remove</button>
+      <li
+        task-item
+        [task]="task"
+        (toggleDone)="toggleDone.emit($event)"
+        (remove)="remove.emit($event)">
       </li>
     }
   </ul>
