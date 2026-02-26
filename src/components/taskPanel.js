@@ -15,8 +15,8 @@
         doneCount: '<',
         onAdd: '&',
         onRemove: '&',
-        onApplyFilter: '&',
-        onPersist: '&'
+        onToggleDone: '&',
+        onApplyFilter: '&'
       },
       templateUrl: 'components/templates/taskPanel.html'
     });

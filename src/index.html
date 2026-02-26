@@ -20,8 +20,8 @@
       done-count="vm.doneCount"
       on-add="vm.addTask()"
       on-remove="vm.removeTask(task)"
-      on-apply-filter="vm.applyFilter()"
-      on-persist="vm.persist()">
+      on-toggle-done="vm.toggleDone(task)"
+      on-apply-filter="vm.applyFilter()">
     </task-panel>
 
     <users-panel users="vm.users" on-load="vm.loadUsers()"></users-panel>

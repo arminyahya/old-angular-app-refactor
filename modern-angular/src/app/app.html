@@ -1,0 +1,17 @@
+<app-header></app-header>
+
+<task-panel
+  [tasks]="tasks()"
+  [filteredTasks]="filteredTasks()"
+  [(newTaskTitle)]="newTaskTitle"
+  [(newTaskPriority)]="newTaskPriority"
+  [(filterState)]="filterState"
+  [(searchText)]="searchText"
+  [openCount]="openCount()"
+  [doneCount]="doneCount()"
+  (add)="addTask()"
+  (remove)="removeTask($event)"
+  (toggleDone)="toggleDone()">
+</task-panel>
+
+<users-panel [users]="users()" (load)="loadUsers()"></users-panel>

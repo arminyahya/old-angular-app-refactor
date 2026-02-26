@@ -1,8 +1,8 @@
 <section class="panel">
-  <h2>Users (legacy async)</h2>
-  <button ng-click="$ctrl.onLoad()">Load Users</button>
+  <h2>{{::'Users (legacy async)'}}</h2>
+  <button ng-click="$ctrl.onLoad()">{{::'Load Users'}}</button>
   <ul class="user-list">
-    <li ng-repeat="user in $ctrl.users">
+    <li ng-repeat="user in $ctrl.users track by user.name">
       <span>{{user.name}}</span>
       <small>{{user.role}}</small>
     </li>

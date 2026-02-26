@@ -1,0 +1,57 @@
+<section class="panel">
+  <h2>Tasks</h2>
+  <form (ngSubmit)="add.emit()">
+    <input
+      type="text"
+      [(ngModel)]="newTaskTitle"
+      name="newTaskTitle"
+      placeholder="New task" />
+    <select
+      [(ngModel)]="newTaskPriority"
+      name="newTaskPriority">
+      <option value="low">Low</option>
+      <option value="medium">Medium</option>
+      <option value="high">High</option>
+    </select>
+    <button type="submit">Add</button>
+  </form>
+
+  <div class="filters">
+    <label>
+      Show:
+      <select
+        [(ngModel)]="filterState"
+        name="filterState">
+        <option value="all">All</option>
+        <option value="open">Open</option>
+        <option value="done">Done</option>
+      </select>
+    </label>
+    <label>
+      Search:
+      <input
+        type="text"
+        [(ngModel)]="searchText"
+        name="searchText" />
+    </label>
+  </div>
+
+  <ul class="task-list">
+    @for (task of filteredTasks; track task.id ?? task.title) {
+      <li>
+        <label>
+          <input
+            type="checkbox"
+            [ngModel]="task.done"
+            (ngModelChange)="task.done = $event; toggleDone.emit(task)"
+            [name]="'done-' + (task.id ?? task.title)" />
+          <span [class.done]="task.done">{{ task.title }}</span>
+        </label>
+        <span class="priority" [class]="('priority ' + task.priority)">{{ task.priority }}</span>
+        <button class="link" type="button" (click)="remove.emit(task)">Remove</button>
+      </li>
+    }
+  </ul>
+
+  <task-stats [open]="openCount" [done]="doneCount" [total]="tasks.length"></task-stats>
+</section>

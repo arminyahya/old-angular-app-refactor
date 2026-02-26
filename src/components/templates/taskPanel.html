@@ -1,38 +1,45 @@
 <section class="panel">
-  <h2>Tasks</h2>
+  <h2>{{::'Tasks'}}</h2>
   <form ng-submit="$ctrl.onAdd()">
-    <input type="text" ng-model="$ctrl.newTaskTitle" placeholder="New task" />
+    <input type="text" ng-model="$ctrl.newTaskTitle" placeholder="{{::'New task'}}" />
     <select ng-model="$ctrl.newTaskPriority">
-      <option value="low">Low</option>
-      <option value="medium">Medium</option>
-      <option value="high">High</option>
+      <option value="low">{{::'Low'}}</option>
+      <option value="medium">{{::'Medium'}}</option>
+      <option value="high">{{::'High'}}</option>
     </select>
-    <button type="submit">Add</button>
+    <button type="submit">{{::'Add'}}</button>
   </form>
 
   <div class="filters">
     <label>
-      Show:
+      {{::'Show:'}}
       <select ng-model="$ctrl.filterState" ng-change="$ctrl.onApplyFilter()">
-        <option value="all">All</option>
-        <option value="open">Open</option>
-        <option value="done">Done</option>
+        <option value="all">{{::'All'}}</option>
+        <option value="open">{{::'Open'}}</option>
+        <option value="done">{{::'Done'}}</option>
       </select>
     </label>
     <label>
-      Search:
-      <input type="text" ng-model="$ctrl.searchText" ng-change="$ctrl.onApplyFilter()" />
+      {{::'Search:'}}
+      <input
+        type="text"
+        ng-model="$ctrl.searchText"
+        ng-model-options="{ debounce: 150 }"
+        ng-change="$ctrl.onApplyFilter()" />
     </label>
   </div>
 
   <ul class="task-list">
-    <li ng-repeat="task in $ctrl.filteredTasks">
+    <li ng-repeat="task in $ctrl.filteredTasks track by task.id">
       <label>
-        <input type="checkbox" ng-model="task.done" ng-change="$ctrl.onPersist()" />
+        <input
+          type="checkbox"
+          ng-model="task.done"
+          ng-change="$ctrl.onToggleDone({ task: task })" />
         <span ng-class="{done: task.done}">{{task.title}}</span>
       </label>
       <span class="priority" ng-class="task.priority">{{task.priority}}</span>
-      <button class="link" ng-click="$ctrl.onRemove({ task: task })">Remove</button>
+      <button class="link" ng-click="$ctrl.onRemove({ task: task })">{{::'Remove'}}</button>
     </li>
   </ul>
 
