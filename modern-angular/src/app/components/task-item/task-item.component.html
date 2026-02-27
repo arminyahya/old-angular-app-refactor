@@ -1,0 +1,9 @@
+<label>
+  <input
+    type="checkbox"
+    [checked]="task().done"
+    (change)="onDoneChange($any($event.target).checked)" />
+  <span [class.done]="task().done">{{ task().title }}</span>
+</label>
+<span class="priority" [class]="('priority ' + task().priority)">{{ task().priority }}</span>
+<button class="link" type="button" (click)="onRemove()">Remove</button>

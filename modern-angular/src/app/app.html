@@ -9,9 +9,12 @@
   [(searchText)]="searchText"
   [openCount]="openCount()"
   [doneCount]="doneCount()"
+  [autoPrioritizing]="isAutoPrioritizing()"
+  [autoPriorityStatus]="autoPriorityStatus()"
   (add)="addTask()"
+  (autoPrioritize)="autoPrioritizeTasks()"
   (remove)="removeTask($event)"
-  (toggleDone)="toggleDone()">
+  (toggleDone)="toggleDone($event)">
 </task-panel>
 
 <users-panel [users]="users()" (load)="loadUsers()"></users-panel>

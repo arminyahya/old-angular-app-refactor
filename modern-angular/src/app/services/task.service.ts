@@ -1,4 +1,6 @@
 import { Injectable } from '@angular/core';
+import { HttpClient, HttpParams } from '@angular/common/http';
+import { Observable, map, timer } from 'rxjs';
 
 import { Task } from '../models/task.model';
 
@@ -6,53 +8,41 @@ import { Task } from '../models/task.model';
   providedIn: 'root'
 })
 export class TaskService {
-  private readonly storageKey = 'legacy_tasks';
+  private readonly tasksApiUrl = '/api/tasks.json';
 
-  getAll(): Task[] {
-    const storage = this.getStorage();
-    const raw = storage?.getItem(this.storageKey);
+  constructor(private readonly http: HttpClient) {}
 
-    if (!raw) {
-      return [
-        { title: 'Review legacy controller', done: false, priority: 'high' },
-        { title: 'Replace $scope watchers', done: false, priority: 'medium' },
-        { title: 'Upgrade to components', done: true, priority: 'low' }
-      ];
+  fetchAll(searchText = ''): Observable<Task[]> {
+    const search = searchText.trim().toLowerCase();
+    const params = search ? new HttpParams().set('search', searchText) : undefined;
+
+    return this.http.get<Task[]>(this.tasksApiUrl, { params }).pipe(
+      // Keep client-side filtering for now; backend can later honor `search` directly.
+      map((tasks) =>
+        search ? tasks.filter((task) => task.title.toLowerCase().includes(search)) : tasks
+      )
+    );
+  }
+
+  suggestPriority(task: Task): Observable<string> {
+    const simulatedLatencyMs = 250 + Math.floor(Math.random() * 700);
+    return timer(simulatedLatencyMs).pipe(map(() => this.computeSuggestedPriority(task)));
+  }
+
+  private computeSuggestedPriority(task: Task): string {
+    if (task.done) {
+      return 'low';
     }
 
-    try {
-      return JSON.parse(raw) as Task[];
-    } catch {
-      return [];
-    }
-  }
-
-  add(task: Task): Task[] {
-    const tasks = this.getAll();
-    // Keep the legacy in-place mutation behavior for migration parity.
-    tasks.push(task);
-    this.save(tasks);
-    return tasks;
-  }
-
-  remove(task: Task): Task[] {
-    const tasks = this.getAll();
-    const index = tasks.indexOf(task);
-
-    if (index !== -1) {
-      // Keep the legacy in-place mutation behavior for migration parity.
-      tasks.splice(index, 1);
-      this.save(tasks);
+    const title = task.title.toLowerCase();
+    if (title.includes('urgent') || title.includes('blocker') || title.includes('fix')) {
+      return 'high';
     }
 
-    return tasks;
-  }
+    if (title.includes('docs') || title.includes('chore') || title.includes('cleanup')) {
+      return 'low';
+    }
 
-  save(tasks: Task[]): void {
-    this.getStorage()?.setItem(this.storageKey, JSON.stringify(tasks));
-  }
-
-  private getStorage(): Storage | null {
-    return typeof localStorage === 'undefined' ? null : localStorage;
+    return 'medium';
   }
 }
